@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- SEO -->
+    <title>From Docker to Kubernetes with PHP</title>
+    <meta name="description" content="How can we deploy PHP applications using Docker containers? How can we scale PHP applications using Kubernetes? This presentation will make an overview over these questions, mixing the pratical and theory.">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
+
+    <!-- CSS WebSlides -->
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
+
+    <!-- Optional - CSS SVG Icons (Font Awesome) -->
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
+
+    <!-- Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#333333">
+
+    <!-- ASCIINEMA Player -->
+    <link rel="stylesheet" type="text/css" href="static/css/asciinema-player.css">
+
+    <style type="text/css">
+      section.asciinema {
+        background-color: #121314;
+        padding: 0 !important;
+      }
+
+      .asciinema-theme-asciinema .asciinema-terminal {
+        width: 100% !important;
+      }
+
+      .asciinema-player-wrapper .asciinema-player {
+        width: 100%;
+      }
+
+      .asciinema-terminal .line {
+        height: auto;
+        width: 100%;
+      }
+
+      .asciinema-terminal .line span {
+        height: auto;
+        width: auto;
+        word-wrap: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <main role="main">
+      <article id="webslides" class="vertical">
+
+        <section class="bg-black slide-top">
+          <span class="background" style="background-image:url('https://source.unsplash.com/-F7EF0W9B8Y/')"></span>
+          <div class="wrap">
+            <h2 class="text-landing">From Docker to<br>Kubernetes with PHP</h2>
+            <p class="text-context text-intro">Gabriel Couto, CTO of Memed</p>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2>This presentation is <strong>Open Source <svg class="fa-heart"><use xlink:href="#fa-heart"></use></svg></strong></h2>
+            <h3>Feel free to download, modify and distribute</h3>
+            <h4><svg class="fa-github"><use xlink:href="#fa-github"></use></svg> gabrielrcouto/presentation-from-docker-to-kubernetes</h4>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>Inverse <svg class="fa-random"><use xlink:href="#fa-random"></use></svg></strong></h2>
+            <h3>Run and Explain</h3>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top">
+          <span class="background" style="background-image:url('https://source.unsplash.com/jmEwNM588-E/')"></span>
+        </section>
+
+        <section class="aligncenter">
+          <span class="background-right-top" style="background-image:url('https://dl2.macupdate.com/images/icons256/57761.png?d=1530558144')"></span>
+          <div class="wrap">
+            <h1 class="text-landing">Docker</h1>
+            <p class="text-intro">Docker is an open platform for developers and sysadmins to build, ship, and run distributed applications, whether on laptops, data center VMs, or the cloud.</p>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/local-php.cast"></section>
+
+        <section>
+          <span class="background" style="background-image:url('https://talkitbr.files.wordpress.com/2016/10/docker_container-vs-vms.jpg'); background-size: contain"></span>
+        </section>
+
+        <section>
+          <span class="background" style="background-image:url('http://blacktourmaline.com.br/web/image/924/lxc-docker.png'); background-size: contain"></span>
+        </section>
+
+        <section class="aligncenter">
+          <span class="background" style="background-image:url('static/images/nginx-php-fpm.svg'); background-size: contain"></span>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/nginx.cast"></section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/nginx-sites-available.cast"></section>
+
+        <section>
+          <pre>
+            <code>
+server {
+    listen 80 default_server;
+    charset utf-8;
+
+    root /var/www;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        try_files     $uri /index.php =404;
+        fastcgi_pass  php:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+            </code>
+          </pre>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/nginx-php-fpm.cast"></section>
+
+        <section class="aligncenter">
+          <span class="background-right-bottom" style="background-image:url('https://cdn-images-1.medium.com/max/1600/1*SpNSwog-tYeTXn2bEn2_RQ.png')"></span>
+          <div class="wrap aligncenter">
+            <h1><strong>Docker Compose</strong></h1>
+            <p class="text-intro">Compose is a tool for defining and running <br>multi-container Docker applications.</p>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <pre>
+            <code>
+version: '2'
+services:
+  nginx:
+    image: nginx
+    restart: always
+    links:
+      - php
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./php:/var/www
+    working_dir: /var/www
+    networks:
+      main:
+        aliases:
+          - php.local
+  php:
+    image: php:7.2-fpm
+    command: "php-fpm -dmemory_limit=1024M --allow-to-run-as-root"
+    restart: always
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: pass
+    volumes:
+      - ./php:/var/www
+    working_dir: /var/www
+    networks:
+      - main
+networks:
+  main:
+    driver: bridge
+
+            </code>
+          </pre>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/docker-compose.cast"></section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/env.cast"></section>
+
+        <section class="bg-black aligncenter slide-top">
+          <span class="background" style="background-image:url('https://source.unsplash.com/y8TMoCzw87E/')"></span>
+          <div class="wrap">
+            <h1>HOW TO DEPLOY?</h1>
+          </div>
+        </section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-60 bg-white">
+              <figure>
+                <img src="https://source.unsplash.com/WzZjyThDoR8/800x600" alt="Containers">
+              </figure>
+              <div class="flex-content">
+                <h2>
+                  Docker Image
+                </h2>
+                <p>One of the principles of Docker containers is that an image is immutable.</p>
+                <p>Get a container image, <strong>customize it</strong>, push to Docker Registry and deploy.</p>
+                <p>To build a customized container image, you need to write a <strong>Dockerfile</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-50">
+              <blockquote>
+                <p>&ldquo;Use a single container for NGINX + PHP.&rdquo;</p>
+                <p><cite>Leonardo da Vinci</cite></p>
+              </blockquote>
+              <figure><img src="http://res.publicdomainfiles.com/pdf_view/68/13927297815225.png" alt="Leonardo da Vinci" width="300"></figure>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <pre>
+FROM php:7.2-fpm
+
+RUN apt-get update && \
+  apt-get install -y supervisor nginx && \
+  apt-get clean && \
+  apt-get autoremove -y
+
+ADD php /var/www
+ADD nginx/allinone.conf /etc/nginx/sites-available/default
+ADD supervisor /etc/supervisor/conf.d
+
+CMD ["supervisord", "--nodaemon"]
+          </pre>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/docker-build.cast"></section>
+
+        <section class="fullscreen bg-blue aligncenter">
+         <div class="embed">
+          <video autoplay muted>
+            <source src="videos/docker-hub.mov">
+          </video>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/docker-hub-push.cast"></section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>docker run -p 80:80 gabrielrcouto/app:1.0</strong></h2>
+            <h3>We need to keep the container running on each of our servers.<br>How to do that?</h3>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>SSH?</strong></h2>
+            <h3>No, too much work and very manually</h3>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h1><strong>Container Orchestrators</strong> to the rescue!</h1>
+            <img src="https://portworx.com/wp-content/uploads/2016/06/data_automation_v1.png" width="60%" />
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <img src="https://softwareengineeringdaily.com/wp-content/uploads/2018/04/kubernetes.png" width="50%" />
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <span class="background" style="background-image:url('static/images/kubernetes-master-worker.svg'); background-size: contain"></span>
+        </section>
+
+        <section class="aligncenter">
+          <span class="background" style="background-image:url('static/images/kubernetes-clusters.svg'); background-size: contain"></span>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>The "let's try" way</strong></h2>
+            <image src="static/images/docker-kubernetes-config.png" />
+          </div>
+        </section>
+
+        <section class="aligncenter bg-white">
+          <div class="wrap">
+            <p><img src="https://raw.githubusercontent.com/kubernetes/kops/master/docs/img/logo.jpg" width="400" /></p>
+            <h2><strong>The production ready way</strong></h2>
+            <p>Only for AWS and GCE</p>
+          </div>
+        </section>
+
+        <section class="aligncenter bg-white">
+          <div class="wrap">
+            <h2>Google Container Engine<br>Azure Container Service<br>AWS Elastic Container Service<br>OpenShift</h2>
+            <h2><strong>The production ready way</strong></h2>
+            <p>Easy version</p>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>The manual way</strong></h2>
+            <pre>
+apt-get update
+apt-get install -y docker.io apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+
+# on master
+kubeadm init
+
+# on workers
+kubeadm join --token &lt;token&gt; &lt;master-ip&gt;:&lt;master-port&gt; --discovery-token-ca-cert-hash sha256:&lt;hash&gt;
+            </pre>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>Concept: Pod</strong></h2>
+            <p><img src="https://d33wubrfki0l68.cloudfront.net/fe03f68d8ede9815184852ca2a4fd30325e5d15a/98064/docs/tutorials/kubernetes-basics/public/images/module_03_pods.svg" /></p>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h2><strong>Concept: Node</strong></h2>
+            <p><img src="https://d33wubrfki0l68.cloudfront.net/5cb72d407cbe2755e581b6de757e0d81760d5b86/a9df9/docs/tutorials/kubernetes-basics/public/images/module_03_nodes.svg" width="50%" /></p>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <pre>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app
+spec:
+  containers:
+  - name: app
+    image: gabrielrcouto/app:1.0
+    ports:
+    - containerPort: 80              
+            </pre>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/pod.cast"></section>
+
+        <section class="fullscreen">
+          <div class="card-50">
+            <figure>
+              <img src="https://source.unsplash.com/CHAFV-0U7b8/">
+            </figure>
+            <div class="flex-content">
+              <h2>Concept: Deployment</h2>
+              <p>use a Deployment to manage maintaining and updating your running Pods</p>
+              <p class="text-intro">A Deployment object defines a Pod creation template (a “cookie-cutter” if you will) and desired replica count. The Deployment uses a label selector to identify the Pods it manages, and will create or delete Pods as needed to meet the replica count. Deployments are also used to manage safely rolling out changes to your running Pods.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <pre>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx-php
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx-php
+    spec:
+      containers:
+      - name: app
+        image: gabrielrcouto/app:1.0
+        ports:
+        - containerPort: 80
+            </pre>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/deployment.cast"></section>
+
+        <section class="fullscreen">
+          <div class="card-50">
+            <figure>
+              <img src="https://source.unsplash.com/TJo93YWEYNo/">
+            </figure>
+            <div class="flex-content">
+              <h2>Concept: Service</h2>
+              <p>an abstraction which defines a logical set of Pods and a policy by which to access them - sometimes called a micro-service</p>
+              <p class="text-intro">The service object defines the pod (using selectors) which the ports will be forwarded to the Node/ClusterIP/LoadBalancer ports.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <pre>
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: nginx-php
+  type: NodePort
+            </pre>
+          </div>
+        </section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/service.cast"></section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/deployment-update.cast"></section>
+
+        <section class="bg-black slide-top asciinema" data-asciinema="casts/service-load-balancing.cast"></section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-60 bg-white">
+              <figure>
+                <img src="https://source.unsplash.com/RgAUYSTa0NI/800x600" alt="Containers">
+              </figure>
+              <div class="flex-content">
+                <h2>
+                  Affinity, Taint and Toleration
+                </h2>
+                <p>It's possible to define if the node will accept or not to schedule some pods.</p>
+                <p><strong>Node affinity</strong> (in beta) is a property of pods that <strong>attracts</strong> them to a set of nodes.</p>
+                <p><strong>Taints</strong> are the opposite – they allow a node to <strong>repel</strong> a set of pods.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-60 bg-white">
+              <figure>
+                <img src="https://source.unsplash.com/9K_tJ7dxYSU/800x600" alt="Containers">
+              </figure>
+              <div class="flex-content">
+                <h2>
+                  Health Check
+                </h2>
+                <p>You can specify a liveness probe to each pod container.</p>
+                <p>A probe can be a successful <strong>command execution</strong> inside the container, a successful <strong>HTTP request</strong> or a successful <strong>TCP connection</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-60 bg-white">
+              <figure>
+                <img src="https://source.unsplash.com/0PpehdpobH8/800x600" alt="Containers">
+              </figure>
+              <div class="flex-content">
+                <h2>
+                  Resource Quote
+                </h2>
+                <p>Each container can have:</p>
+                <p><strong>Minimum</strong> cpu and memory to be able to run (requests.cpu and requests.memory).</p>
+                <p><strong>Maximum</strong> cpu and memory that can be used (limit.cpu and limit.memory).</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white aligncenter slide-top">
+          <span class="background" style="background-image:url('https://d33wubrfki0l68.cloudfront.net/a144cb4570dc95ebc2e35b4b748a0e5ee71879dd/e3d2d/images/docs/ui-dashboard-node.png'); background-size: contain;"></span>
+        </section>
+
+        <section class="bg-black aligncenter">
+          <span class="background" style="background-image:url('https://raw.githubusercontent.com/raintank/kubernetes-app/master/src/img/container-dashboard-screenshot.png'); background-size: contain"></span>
+        </section>
+
+        <section>
+          <div class="wrap">
+            <div class="card-60 bg-white">
+              <figure>
+                <img src="https://source.unsplash.com/_3yYu2nQZgE/800x600" alt="Containers">
+              </figure>
+              <div class="flex-content">
+                <h2>
+                  DinD
+                </h2>
+                <p>Docker in Docker</p>
+                <p>You can run a container with privileged access, which will be able to execute another docker engine and create containers.</p>
+                <p>Useful for "development" environments.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-black aligncenter">
+          <span class="background" style="background-image:url('https://cdn-images-1.medium.com/max/1600/1*q6Rn63AwFqlRx8N81PDIRw.png'); background-size: contain"></span>
+        </section>
+
+        <section class="fullscreen">
+          <div class="card-50">
+            <figure>
+              <img src="https://source.unsplash.com/hKVg7ldM5VU/">
+            </figure>
+            <div class="flex-content">
+              <h2>Why use containers?</h2>
+              <p class="text-intro">- Run the same application on different machines<br>- Easy to scale<br>- Don't think about servers, think about resources<br>- Easy to maintain<br>- Linux <svg class="fa-heart"><use xlink:href="#fa-heart"></use></svg></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide-top">
+          <span class="background" style="background-image:url('https://source.unsplash.com/E0UKvm8rb8Q/');"></span>
+          <div class="wrap content-center">
+            <h1>Thank you <svg class="fa-heart"><use xlink:href="#fa-heart"></use></svg></h1>
+            <p><svg class="fa-github"><use xlink:href="#fa-github"></use></svg>gabrielrcouto - <svg class="fa-github"><use xlink:href="#fa-github"></use></svg>memeddev<br><svg class="fa-twitter"><use xlink:href="#fa-twitter"></use></svg>@gabrielrcouto<br>phpsp.org.br</p>
+          </div>
+        </section>
+
+      </article>
+    </main>
+
+    <script src="static/js/webslides.min.js"></script>
+    <script src="static/js/asciinema-player.js"></script>
+
+    <script>
+      window.ws = new WebSlides();
+
+      function verifyAsciinema() {
+        let currentSlide = ws.currentSlide_.el;
+        let dataAsciinema = currentSlide.attributes['data-asciinema'];
+
+        if (dataAsciinema && currentSlide.getElementsByClassName('asciinema-player-wrapper').length === 0) {
+          asciinema.player.js.CreatePlayer(
+            currentSlide,
+            dataAsciinema.nodeValue,
+            {
+              'autoPlay': true,
+              'preload': true,
+              'fontSize': 'big',
+              'height': 20,
+              'width': 100
+            }
+          );
+        }
+      }
+
+      ws.el.addEventListener('ws:slide-change', () => {
+        verifyAsciinema();
+      });
+    </script>
+
+    <script defer src="static/js/svg-icons.js"></script>
+  </body>
+</html>

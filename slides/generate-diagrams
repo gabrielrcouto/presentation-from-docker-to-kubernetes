@@ -1,0 +1,4 @@
+#!/bin/bash
+./node_modules/.bin/mmdc -i diagrams/nginx-php-fpm.mmd -o static/images/nginx-php-fpm.svg
+./node_modules/.bin/mmdc -i diagrams/kubernetes-master-worker.mmd -o static/images/kubernetes-master-worker.svg
+./node_modules/.bin/mmdc -i diagrams/kubernetes-clusters.mmd -o static/images/kubernetes-clusters.svg
