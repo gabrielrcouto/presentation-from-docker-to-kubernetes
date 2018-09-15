@@ -3,6 +3,10 @@ How can we deploy PHP applications using Docker containers? How can we scale PHP
 
 This presentation is Open Source \o/ Feel free to modify and present it on any event.
 
+## Links
+
+- [Slides](https://gabrielrcouto.github.io/presentation-from-docker-to-kubernetes/slides/index.html)
+
 ## Presented at
 - [PHP COMMUNIT SUMMIT 2018](http://eventos.locaweb.com.br/proximos-eventos/php-community-summit-2018/)
 
